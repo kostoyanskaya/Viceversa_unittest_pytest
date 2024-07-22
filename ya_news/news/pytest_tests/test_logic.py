@@ -1,148 +1,80 @@
-from datetime import datetime
-import pytest
 from random import choice
+from http import HTTPStatus
 
+import pytest
 from pytest_django.asserts import assertFormError, assertRedirects
-from django.test.client import Client
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
-from http import HTTPStatus
-
-from news.models import Comment, News
+from news.models import Comment
 from news.forms import BAD_WORDS, WARNING
+
+
+pytestmark = pytest.mark.django_db
 
 User = get_user_model()
 
 
-@pytest.fixture
-def news():
-    news = News.objects.create(
-        title='Новость',
-        text='Текст новости',
-        date=datetime.today(),
-    )
-    return news
-
-
-@pytest.fixture
-def author(django_user_model):
-    return django_user_model.objects.create(username='Автор')
-
-
-@pytest.fixture
-def not_author(django_user_model):
-    return django_user_model.objects.create(username='Не автор')
-
-
-@pytest.fixture
-def author_client(author):
-    client = Client()
-    client.force_login(author)
-    return client
-
-
-@pytest.fixture
-def not_author_client(not_author):
-    client = Client()
-    client.force_login(not_author)
-    return client
-
-
-@pytest.fixture
-def comment(author, news):
-    comment = Comment.objects.create(
-        news=news,
-        author=author,
-        text='Текст комментария',
-        created=datetime.now()
-    )
-    return comment
-
-
-@pytest.fixture
-def comment_delete(comment):
-    return reverse('news:delete', args=(comment.id,))
-
-
-@pytest.fixture
-def comment_edit(comment):
-    return reverse('news:edit', args=(comment.id,))
-
-
-@pytest.fixture
-def news_pk(news):
-    return news.id,
-
-
-@pytest.mark.django_db
-def test_anonymous_cant_sent_comment(client, news_pk):
+def test_anonymous_cant_sent_comment(client, detail_url, comment_data):
     result = Comment.objects.count()
-    client.post(reverse('news:detail', args=news_pk), data={'text': 'Текст.'})
+    client.post((detail_url), data=comment_data)
     assert Comment.objects.count() == result
 
 
-@pytest.mark.django_db
-def test_user_can_sent_comment(author_client, news_pk):
-    result = Comment.objects.count() + 1
-    author_client.post(reverse(
-        'news:detail', args=news_pk), data={'text': 'Текст.'}
+def test_user_can_sent_comment(author_client, news, detail_url, author, comment_data):
+    Comment.objects.all().delete()
+    author_client.post((detail_url), data=comment_data
     )
-    assert Comment.objects.count() == result
+    assert Comment.objects.count() == 1
+    comment = Comment.objects.get()
+    assert comment.text == comment_data['text']
+    assert comment.author == author
+    assert comment.news == news
 
 
-@pytest.mark.django_db
-def test_user_cant_use_bad_words(author_client, news_pk):
+def test_user_cant_use_bad_words(author_client, news, detail_url, comment_data):
     result = Comment.objects.count()
-    form_data = {'text': 'Текст.'}
-    form_data['text'] = f'text, {choice(BAD_WORDS)}.'
-    response = author_client.post(reverse(
-        'news:detail', args=news_pk), data=form_data
+    comment_data['text'] = f'text, {choice(BAD_WORDS)}.'
+    response = author_client.post((detail_url), data=comment_data
     )
     assertFormError(response, 'form', 'text', WARNING)
     assert Comment.objects.count() == result
 
 
-@pytest.mark.django_db
-def test_author_can_edit_comment(author_client, comment, author, news):
-    url = reverse('news:detail', args=(news.id,))
-    url_to_comments = f'{url}#comments'
-    response = author_client.post(reverse(
-        'news:edit', args=(comment.id,)), data={'text': 'Текст.'}
+def test_author_can_edit_comment(author_client, comment, author, news, detail_url, edit_url, comment_data):
+    result = Comment.objects.count()
+    url_to_comments = f'{detail_url}#comments'
+    response = author_client.post(edit_url, data=comment_data
     )
     assertRedirects(response, url_to_comments)
-    form_data = {'text': 'Текст.'}
-    comment.refresh_from_db()
-    assert comment.text == form_data['text']
+    assert Comment.objects.count() == result
+    comment = Comment.objects.get(id=comment.id)
+    assert comment.text == comment_data['text']
     assert comment.author == author
     assert comment.news == news
 
 
-@pytest.mark.django_db
-def test_another_user_cant_edit_comment(admin_client, comment):
-    response = admin_client.post(reverse(
-        'news:edit', args=(comment.id,)), data={'text': 'Текст.'}
-    )
+def test_another_user_cant_edit_comment(admin_client, comment, edit_url, comment_data):
+    result = Comment.objects.count()
+    response = admin_client.post(edit_url, data=comment_data)
     assert response.status_code == HTTPStatus.NOT_FOUND
+    assert Comment.objects.count() == result
     comment_from_db = Comment.objects.get(id=comment.id)
     assert comment.text == comment_from_db.text
     assert comment.author == comment_from_db.author
     assert comment.news == comment_from_db.news
 
 
-@pytest.mark.django_db
-def test_author_can_delete_comment(author_client, comment, author, news):
-    url = reverse('news:detail', args=(news.id,))
-    url_comments = f'{url}#comments'
+def test_author_can_delete_comment(author_client, comment, author, detail_url, delete_url):
+    url_comments = f'{detail_url}#comments'
     result = Comment.objects.count()
-    response = author_client.delete(reverse('news:delete', args=(comment.id,)))
+    response = author_client.delete(delete_url)
     assertRedirects(response, url_comments)
     assert Comment.objects.count() == result - 1
 
 
-@pytest.mark.django_db
-def test_another_user_cant_delete_comment(admin_client, comment):
+def test_another_user_cant_delete_comment(admin_client, comment, delete_url):
     result = Comment.objects.count()
-    response = admin_client.delete(reverse('news:delete', args=(comment.id,)))
+    response = admin_client.delete(delete_url)
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert Comment.objects.count() == result
