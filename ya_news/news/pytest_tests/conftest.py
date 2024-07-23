@@ -31,13 +31,6 @@ def author_client(author):
     return client
 
 
-
-
-@pytest.fixture
-def news_pk(news):
-    return news.id,
-
-
 @pytest.fixture
 def comment_data(author, news):
     now = make_aware(datetime.now())
@@ -47,6 +40,7 @@ def comment_data(author, news):
         )
         comment.created = now + timedelta(days=index)
         comment.save()
+
 
 @pytest.fixture
 def count_news():
@@ -61,11 +55,9 @@ def count_news():
     News.objects.bulk_create(all_news)
 
 
-
 @pytest.fixture
 def not_author(django_user_model):
     return django_user_model.objects.create(username='Не автор')
-
 
 
 @pytest.fixture
@@ -95,13 +87,16 @@ def comment_delete(comment):
 def comment_edit(comment):
     return reverse('news:edit', args=(comment.id,))
 
+
 @pytest.fixture
 def home_url():
     return reverse('news:home')
 
+
 @pytest.fixture
 def detail_url(news):
     return reverse('news:detail', args=(news.id,))
+
 
 @pytest.fixture
 def edit_url(comment):
@@ -111,6 +106,7 @@ def edit_url(comment):
 @pytest.fixture
 def delete_url(comment):
     return reverse('news:delete', args=(comment.id,))
+
 
 @pytest.fixture
 def login_url():
@@ -125,6 +121,7 @@ def logout_url():
 @pytest.fixture
 def signup_url():
     return reverse('users:signup')
+
 
 @pytest.fixture
 def comment_data():

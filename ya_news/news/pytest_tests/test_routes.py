@@ -3,8 +3,6 @@ from http import HTTPStatus
 import pytest
 from pytest_django.asserts import assertRedirects
 from django.contrib.auth import get_user_model
-from django.urls import reverse
-from pytest_lazyfixture import lazy_fixture
 
 
 pytestmark = pytest.mark.django_db
@@ -18,6 +16,7 @@ NOT_FOUND = HTTPStatus.NOT_FOUND
 unnamed = pytest.lazy_fixture('client')
 author = pytest.lazy_fixture('author_client')
 not_author = pytest.lazy_fixture('not_author_client')
+
 
 @pytest.mark.parametrize(
     'url, argument_client, expected_status',
@@ -33,8 +32,9 @@ not_author = pytest.lazy_fixture('not_author_client')
         (pytest.lazy_fixture('delete_url'), not_author, NOT_FOUND),
     ],
 )
-def test_pages_availability_for_anonymous_user(
+def test_pages_availability_for_different_user(
         url, argument_client, expected_status):
+    """Страницы доступные разным клиентам."""
     response = argument_client.get(url)
     assert response.status_code == expected_status
 
@@ -47,6 +47,7 @@ def test_pages_availability_for_anonymous_user(
     ),
 )
 def test_pages_redirects(client, name, login_url):
+    """Редирект на страницу логина."""
     expected_url = f'{login_url}?next={name}'
     response = client.get(name)
     assertRedirects(response, expected_url)

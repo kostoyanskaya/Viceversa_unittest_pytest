@@ -1,6 +1,5 @@
 import pytest
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from django.conf import settings
 
 from news.models import News
@@ -14,12 +13,14 @@ User = get_user_model()
 
 
 def test_homepage_news_count(client, count_news, home_url):
+    """Количество новостей на главной странице."""
     client.get(home_url)
     news = News.objects.count()
     assert news == settings.NEWS_COUNT_ON_HOME_PAGE
 
 
 def test_homepage_news_order(client, count_news, home_url):
+    """Новости отсортированы от самой свежей к самой старой."""
     response = client.get(home_url)
     object_list = response.context['object_list']
     all_dates = [news.date for news in object_list]
@@ -28,6 +29,7 @@ def test_homepage_news_order(client, count_news, home_url):
 
 
 def test_comments_order(client, detail_url):
+    """Комментарии на странице отдельной новости отсортированы."""
     response = client.get(detail_url)
     news = response.context['news']
     all_comments = news.comment_set.all()
@@ -46,6 +48,7 @@ def test_comments_order(client, detail_url):
 )
 def test_different_client_has_form(parametrized_client,
                                    expected_status, detail_url):
+    """Доступна форма для отправки комментария на странице отдельной новости"""
     response = parametrized_client.get(detail_url)
     form_in_context = 'form' in response.context
     assert form_in_context is expected_status

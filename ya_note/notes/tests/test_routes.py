@@ -38,9 +38,16 @@ class TestRoutes(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.author = get_user_model().objects.create_user(username='testuser')
-        cls.reader = get_user_model().objects.create_user(username='testreader')
-        cls.note = Note.objects.create(title='Заголовок', text='Текст', author=cls.author, slug='note_slug')
+        cls.author = get_user_model().objects.create_user(
+            username='testuser'
+        )
+        cls.reader = get_user_model().objects.create_user(
+            username='testreader'
+        )
+        cls.note = Note.objects.create(
+            title='Заголовок', text='Текст',
+            author=cls.author, slug='note_slug'
+        )
 
         cls.client = Client()
         cls.author_client = Client()
@@ -49,23 +56,28 @@ class TestRoutes(TestCase):
         cls.not_author_client.force_login(cls.reader)
 
     def test_all_urls_accessible_by_author(self):
+        """Страницы доступные только автору."""
         for url in self.ALL_URLS:
             with self.subTest(url=url):
                 response = self.author_client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_urls_accessibility_for_non_author(self):
+    def test_urls_accessibility_for_user(self):
+        """Страницы доступные авторизованному пользователю."""
         non_editable_urls = (EDIT_URL, DELETE_URL, DETAIL_URL)
         for url in self.ALL_URLS:
             with self.subTest(url=url):
                 if url in non_editable_urls:
                     response = self.not_author_client.get(url)
-                    self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+                    self.assertEqual(
+                        response.status_code, HTTPStatus.NOT_FOUND
+                    )
                 else:
                     response = self.not_author_client.get(url)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_redirect_for_anonymous_client(self):
+    def test_redirect_for_different_client(self):
+        """Редирект на страницу логина."""
         non_accessible_urls = (EDIT_URL, DELETE_URL, DETAIL_URL)
         for url in self.ALL_URLS:
             with self.subTest(url=url):
