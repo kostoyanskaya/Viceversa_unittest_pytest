@@ -48,7 +48,7 @@ def test_comments_order(client, detail_url):
 )
 def test_different_client_has_form(parametrized_client,
                                    expected_status, detail_url):
-    """Доступна форма для отправки комментария на странице отдельной новости"""
+    """Форма для отправки комментария на странице отдельной новости."""
     response = parametrized_client.get(detail_url)
     form_in_context = 'form' in response.context
     assert form_in_context is expected_status

@@ -25,8 +25,9 @@ def test_user_can_sent_comment(author_client, news, detail_url,
                                author, comment_data):
     """Авторизованный пользователь может отправить комментарий."""
     Comment.objects.all().delete()
+    initial_count = Comment.objects.count()
     author_client.post((detail_url), data=comment_data)
-    assert Comment.objects.count() == 1
+    assert Comment.objects.count() == initial_count + 1
     comment = Comment.objects.get()
     assert comment.text == comment_data['text']
     assert comment.author == author
@@ -35,9 +36,7 @@ def test_user_can_sent_comment(author_client, news, detail_url,
 
 def test_user_cant_use_bad_words(author_client, news,
                                  detail_url, comment_data):
-    """Если комментарий содержит запрещённые слова, он не будет опубликован,
-    а форма вернёт ошибку.
-    """
+    """Если комментарий содержит запрещённые слова, он не будет опубликован."""
     result = Comment.objects.count()
     comment_data['text'] = f'text, {choice(BAD_WORDS)}.'
     response = author_client.post((detail_url), data=comment_data)

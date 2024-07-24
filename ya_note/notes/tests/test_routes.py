@@ -67,24 +67,24 @@ class TestRoutes(TestCase):
         non_editable_urls = (EDIT_URL, DELETE_URL, DETAIL_URL)
         for url in self.ALL_URLS:
             with self.subTest(url=url):
+                response = self.not_author_client.get(url)
                 if url in non_editable_urls:
-                    response = self.not_author_client.get(url)
                     self.assertEqual(
                         response.status_code, HTTPStatus.NOT_FOUND
                     )
                 else:
-                    response = self.not_author_client.get(url)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_redirect_for_different_client(self):
         """Редирект на страницу логина."""
-        non_accessible_urls = (EDIT_URL, DELETE_URL, DETAIL_URL)
+        non_accessible_urls = (
+            EDIT_URL, DELETE_URL, DETAIL_URL, ADD_URL, SUCCESS_URL, LIST_URL
+        )
         for url in self.ALL_URLS:
             with self.subTest(url=url):
+                response = self.client.get(url)
                 if url in non_accessible_urls:
                     redirect_url = f'{LOGIN_URL}?next={url}'
-                    response = self.client.get(url)
                     self.assertRedirects(response, redirect_url)
                 else:
-                    response = self.not_author_client.get(url)
                     self.assertEqual(response.status_code, HTTPStatus.OK)

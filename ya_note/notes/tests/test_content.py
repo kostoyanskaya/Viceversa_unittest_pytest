@@ -42,15 +42,13 @@ class TestContent(TestCase):
         object_list = response.context['object_list']
         self.assertEqual(len(object_list), 1)
         note = object_list[0]
-        self.assertEqual(note.title, 'Название')
-        self.assertEqual(note.text, 'Текст')
-        self.assertEqual(note.author, self.author)
-        self.assertEqual(note.slug, 'note_slug')
+        self.assertEqual(note.title, self.note.title)
+        self.assertEqual(note.text, self.note.text)
+        self.assertEqual(note.author, self.note.author)
+        self.assertEqual(note.slug, self.note.slug)
 
     def test_note_not_in_list(self):
-        """В список заметок одного пользователя не попадают
-        заметки другого пользователя.
-        """
+        """В список заметок одного пользователя не попадают заметки другого."""
         response = self.not_author_client.get(LIST_URL)
         object_list = response.context['object_list']
         self.assertEqual(len(object_list), 0)

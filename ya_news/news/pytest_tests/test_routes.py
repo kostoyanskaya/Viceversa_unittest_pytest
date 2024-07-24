@@ -13,23 +13,32 @@ User = get_user_model()
 OK = HTTPStatus.OK
 NOT_FOUND = HTTPStatus.NOT_FOUND
 
-unnamed = pytest.lazy_fixture('client')
-author = pytest.lazy_fixture('author_client')
-not_author = pytest.lazy_fixture('not_author_client')
+UNNAMED = pytest.lazy_fixture('client')
+AUTHOR = pytest.lazy_fixture('author_client')
+NOT_AUTHOR = pytest.lazy_fixture('not_author_client')
+HOME = pytest.lazy_fixture('home_url')
+DETAIL = pytest.lazy_fixture('detail_url')
+LOGIN = pytest.lazy_fixture('login_url')
+LOGOUT = pytest.lazy_fixture('logout_url')
+SIGNUM = pytest.lazy_fixture('signup_url')
+EDIT = pytest.lazy_fixture('edit_url')
+DELETE = pytest.lazy_fixture('delete_url')
+COMMENT_DELETE = pytest.lazy_fixture('comment_delete')
+COMMENT_EDIT = pytest.lazy_fixture('comment_edit')
 
 
 @pytest.mark.parametrize(
     'url, argument_client, expected_status',
     [
-        (pytest.lazy_fixture('home_url'), unnamed, OK),
-        (pytest.lazy_fixture('detail_url'), unnamed, OK),
-        (pytest.lazy_fixture('login_url'), unnamed, OK),
-        (pytest.lazy_fixture('logout_url'), unnamed, OK),
-        (pytest.lazy_fixture('signup_url'), unnamed, OK),
-        (pytest.lazy_fixture('edit_url'), author, OK),
-        (pytest.lazy_fixture('delete_url'), author, OK),
-        (pytest.lazy_fixture('edit_url'), not_author, NOT_FOUND),
-        (pytest.lazy_fixture('delete_url'), not_author, NOT_FOUND),
+        (HOME, UNNAMED, OK),
+        (DETAIL, UNNAMED, OK),
+        (LOGIN, UNNAMED, OK),
+        (LOGOUT, UNNAMED, OK),
+        (SIGNUM, UNNAMED, OK),
+        (EDIT, AUTHOR, OK),
+        (DELETE, AUTHOR, OK),
+        (EDIT, NOT_AUTHOR, NOT_FOUND),
+        (DELETE, NOT_AUTHOR, NOT_FOUND),
     ],
 )
 def test_pages_availability_for_different_user(
@@ -42,8 +51,8 @@ def test_pages_availability_for_different_user(
 @pytest.mark.parametrize(
     'name',
     (
-        (pytest.lazy_fixture('comment_delete')),
-        (pytest.lazy_fixture('comment_edit')),
+        (COMMENT_DELETE),
+        (COMMENT_EDIT),
     ),
 )
 def test_pages_redirects(client, name, login_url):
