@@ -84,12 +84,15 @@ class LogicContent(TestCase):
 
     def test_author_can_edit_note(self):
         """Автор может редактировать свою заметку."""
+        initial_count = Note.objects.count()
         response = self.author_client.post(EDIT_URL, data=self.note_data)
         self.assertRedirects(response, SUCCESS_URL)
         updated_note = Note.objects.get(id=self.note.id)
         self.assertEqual(updated_note.title, self.note_data['title'])
         self.assertEqual(updated_note.text, self.note_data['text'])
-        self.assertEqual(updated_note.author, self.author)
+        self.assertEqual(updated_note.author, self.note.author)
+        self.assertEqual(updated_note.slug, self.note_data['slug'])
+        self.assertEqual(Note.objects.count(), initial_count)
 
     def test_anonymous_user_cant_edit_note(self):
         """Читатель не может редактировать чужие заметки."""
@@ -97,9 +100,10 @@ class LogicContent(TestCase):
         response = self.not_author_client.post(EDIT_URL, data=self.note_data)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         note_from_db = Note.objects.get(id=self.note.id)
-        self.assertEqual(self.note_data['title'], note_from_db.title)
-        self.assertEqual(self.note_data['text'], note_from_db.text)
-        self.assertEqual(note_from_db.author, self.author)
+        self.assertEqual(note_from_db.title, self.note_data['title'])
+        self.assertEqual(note_from_db.text, self.note_data['text'])
+        self.assertEqual(note_from_db.author, self.note.author)
+        self.assertEqual(note_from_db.slug, self.note_data['slug'])
         self.assertEqual(Note.objects.count(), initial_count)
 
     def test_author_can_delete_note(self):
